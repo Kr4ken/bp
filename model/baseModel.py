@@ -14,9 +14,12 @@ class baseModel(object):
     model_data = None
 
     steps_per_epoch = 0
+    validation_steps = 0
     epochs = 0
+    refresh = False
+    history = None
 
-    def __init__(self, model_filepath, data,steps_per_epoch = 0,epochs = 1):
+    def __init__(self, model_filepath, data,steps_per_epoch = 0,epochs = 1,refresh = False):
         super(baseModel, self).__init__()
         print('> Инициализируем модель сети  ' + self.name)
         self.model_filepath = model_filepath
@@ -24,13 +27,16 @@ class baseModel(object):
         self.steps_per_epoch = steps_per_epoch
         self.epochs = epochs
         self.filename = self.model_filepath + self.name + ".h5"
+        self.refresh = refresh
         if steps_per_epoch == 0:
             self.steps_per_epoch = int(data.ntrain /epochs / data.batch_size)
+        self.validation_steps = int(data.ntest /epochs / data.batch_size)
+        # self.validation_steps = int(data.ntest / data.batch_size)
 
 
 
     def get_network(self):
-        if (os.path.isfile(self.filename)):
+        if (not self.refresh and os.path.isfile(self.filename)):
             return self.load_network()
         else:
             return self.fit_model_threaded()
@@ -44,25 +50,38 @@ class baseModel(object):
         # Load the h5 saved model and weights
         print('> Загружаем ' + self.name + ' модель сети')
         if (os.path.isfile(self.filename)):
-            self.model =  load_model(self.filename)
+            self.model = load_model(self.filename)
             return self.model
         else:
             print('ОШИБКА: "' + self.filename + '" Файл не содержит h5 модель\n')
             return None
 
-    def fit_model_threaded(self):
+    def fit_model_threaded_old(self):
         print('> Тренируем модель ' + self.name)
         self.model = self.build_network()
-        # if not self.model:
-        #     print('> Нет метаданных модели, получаем данные ' + self.name)
-        #     self.model = self.get_network()
-        # output_file = self.model_filepath + self.filename
         output_file = self.filename
         print('> Параметры модели epochs =  ' + str(self.epochs) + ' Шагов за эпоху = ' + str(self.steps_per_epoch))
-        self.model.fit_generator(
+        self.history = self.model.fit_generator(
             self.model_data.get_generator_clean_data(),
             steps_per_epoch=self.steps_per_epoch,
             epochs=self.epochs
+        )
+        self.model.save(output_file)
+        print('> Модель создана! веса сохранены ', output_file)
+        return self.model
+
+    def fit_model_threaded(self):
+        print('> Тренируем модель ' + self.name)
+        self.model = self.build_network()
+        output_file = self.filename
+        print('> Информация по данным nrows =  ' + str(self.model_data.nrows) + ' ntrain = ' + str(self.model_data.ntrain) + ' ntest = ' + str(self.model_data.ntest))
+        print('> Параметры модели epochs =  ' + str(self.epochs) + ' Шагов за эпоху = ' + str(self.steps_per_epoch) + ' validation steps ' + str(self.validation_steps))
+        self.history = self.model.fit_generator(
+            self.model_data.get_generator_clean_data(),
+            steps_per_epoch=self.steps_per_epoch,
+            epochs=self.epochs
+            # validation_data=self.model_data.get_generator_clean_data_test(),
+            # validation_steps=self.validation_steps
         )
         self.model.save(output_file)
         print('> Модель создана! веса сохранены ', output_file)

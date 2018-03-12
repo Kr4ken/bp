@@ -5,27 +5,44 @@ import dateutil
 import os.path
 
 class bitdata(object):
+    # Директория файлов с данными
     data_filepath = ''
+    # Имя исходного файла с данными
     source_filename =''
+    # Имя очищенного и структурирванного файла с данными
     clean_filename = ''
+    # Имя отфильтрованного по дате файла с данными
     filter_filename = ''
-    filename = ''
+    # Расширение очищенной модели
     filename_extension = 'h5'
+    # Расширение источника и фильтрованного
     source_extension = 'csv'
 
-    batch_size = 1000
+
+    # Колличество элементов обрабатываемых за раз,
+    batch_size = 100
+    # Искомый столбец
     y_col = 'Close'
+    # Размер выборки x
     x_window_size = 100
+    # Размер выборки y
     y_window_size = 1
+    # Столбцы, значение которых должно присутствовать в выборке
     filter_cols = None
+    # Проводить нормализацию данных?
     normalize = True
 
+    # Кол-во строк в результирующих данных
     nrows = 0
+    # Кол-во столбцов в результирующих данных
     ncols = 0
 
+    # Размер тренировочной выборки
     ntrain = 0
+    # Размер тестируемой выборки
     ntest = 0
-    train_rate =0.9
+    # Часть тренировочной тестируемой
+    train_rate = 0.9
 
 
     def __init__(self,
@@ -35,6 +52,7 @@ class bitdata(object):
                  end_date,
                  filename_extension='h5',
                  source_extension = 'csv',
+                 batch_size = 100,
                  x_windows_size = 100,
                  y_windows_size = 1,
                  filter_cols = None,
@@ -42,18 +60,21 @@ class bitdata(object):
                  y_col = 'Close',
                  refresh = False):
         print("> Инициализация модели данных из " + source_filename + " для данных c " + start_date + " по " + end_date)
+        # Параметры файлов
         self.data_filepath = data_filepath
         self.source_filename = source_filename
         self.filename_extension = filename_extension
         self.source_extension = source_extension
         self.clean_filename = "clean_" + self.source_filename
-
+        # Параметры данных
         self.x_window_size = x_windows_size
         self.y_window_size = y_windows_size
         self.filter_cols = filter_cols
         self.normalize = normalize
         self.y_col = y_col
+        self.batch_size = batch_size
 
+        # Создание/загрузка отфильтрованного файла
         self.filter_filename = self.__get_filter_filename(start_date, end_date)
         filter_file = self.filter_filename + "."+source_extension
         print("> Фильтрованый файл ", filter_file)
@@ -61,14 +82,15 @@ class bitdata(object):
             print("> Не найден. Создаем.")
             self.create_filter_date_datafile(start_date, end_date)
 
+        # Создание/загрузка результирующего файла
         self.clean_filename = self.__get_clean_filename(self.x_window_size,y_windows_size)
         clean_file = self.clean_filename + "." + self.filename_extension
         print("> Очищенный файл ", clean_file)
         if not os.path.isfile(clean_file) or refresh:
             print("> Не найден. Создаем.")
             self.create_clean_datafile()
-        self.filename = self.clean_filename
 
+        # Получение данных по результирующей выборке
         with h5py.File(clean_file, 'r') as hf:
             self.nrows = hf['x'].shape[0]
             self.ncols = hf['x'].shape[2]
@@ -78,15 +100,16 @@ class bitdata(object):
 
 
 
-
+    # Функция генерации наименования файла фильтрации
     def __get_filter_filename(self, start_date, end_date):
        return self.data_filepath + self.source_filename+ "|" + start_date+"-"+end_date
 
+    # Функция генерации наименования результирующего файла
     def __get_clean_filename(self, x_window, y_window):
         return self.filter_filename + "_x="+str(x_window) +"_y="+str(y_window)
 
     def get_generator_clean_data(self):
-        """Создание генератора для подтягивания записей из файла"""
+        """Создание генератора для подтягивания записей из результирующего файла"""
         clean_file = self.clean_filename + "." + self.filename_extension
         with h5py.File(clean_file, 'r') as hf:
             i = 0
@@ -107,6 +130,7 @@ class bitdata(object):
                 i += self.batch_size
                 yield (data_x, data_y)
 
+    # Создание файла с фильтрацией по дате
     def create_filter_date_datafile(self,start_date, end_date):
         print('> Создание файлов данных с фильтром по времени...')
         filename_in = self.data_filepath + self.source_filename + "." + self.source_extension
@@ -119,10 +143,7 @@ class bitdata(object):
         result_data.to_csv(filename_out)
         print('> Отфильтрованные данные сохранены в `' + filename_out + '`')
 
-    # def create_clean_datafile(self, filename_in, filename_out, y_col='Close', batch_size=1000, x_window_size=100,
-    #                           y_window_size=1, filter_cols=None, normalise=True):
     def create_clean_datafile(self):
-        """Incrementally save a datafile of clean data ready for loading straight into model"""
         """Подготовка данных для последующего моделирования"""
         print('> Создание очищенных x & y файлов с данными...')
         # filename_out = self.data_filepath + self.clean_filename + "." + self.filename_extension
