@@ -40,7 +40,9 @@ class lstmModel(baseModel):
         start = time.time()
         self.model.compile(
             loss=self.loss_function,
-            optimizer=self.optimiser_function)
+            optimizer=self.optimiser_function,
+            metrics=['accuracy']
+        )
 
         print("> Время компиляции : ", time.time() - start)
         return self.model

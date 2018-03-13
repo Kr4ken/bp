@@ -119,6 +119,17 @@ class bitdata(object):
                 i += self.batch_size
                 yield (data_x, data_y)
 
+    def get_generator_clean_data_reshape(self):
+        """Создание генератора для подтягивания записей из результирующего файла"""
+        clean_file = self.clean_filename + "." + self.filename_extension
+        with h5py.File(clean_file, 'r') as hf:
+            i = 0
+            while True:
+                data_x = np.array(hf['x'][i:i + self.batch_size]).reshape(self.batch_size,self.x_window_size)
+                data_y = hf['y'][i:i + self.batch_size]
+                i += self.batch_size
+                yield (data_x, data_y)
+
     def get_generator_clean_data_test(self):
         """Создание генератора для подтягивания записей из файла для тестирования начиная с индекса ntrain"""
         clean_file = self.clean_filename + "." + self.filename_extension
@@ -126,6 +137,19 @@ class bitdata(object):
             i = self.ntrain
             while True:
                 data_x = hf['x'][i:i + self.batch_size]
+                data_y = hf['y'][i:i + self.batch_size]
+                i += self.batch_size
+                yield (data_x, data_y)
+
+    def get_generator_clean_data_test_reshape(self):
+        """Создание генератора для подтягивания записей из файла для тестирования начиная с индекса ntrain"""
+        clean_file = self.clean_filename + "." + self.filename_extension
+        with h5py.File(clean_file, 'r') as hf:
+            i = self.ntrain
+            print(clean_file)
+            print(np.array(hf['x'][i:i + self.batch_size]).shape)
+            while True:
+                data_x = np.array(hf['x'][i:i + self.batch_size]).reshape(self.batch_size,self.x_window_size)
                 data_y = hf['y'][i:i + self.batch_size]
                 i += self.batch_size
                 yield (data_x, data_y)

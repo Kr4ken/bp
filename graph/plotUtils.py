@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 
 plot_directory = '/home/kraken/projects/bitcoin_project/plot/'
 
+def savePlot(plot,filename):
+    plot.savefig(filename)
+
 
 def plot_graph(data,label):
 	plt.figure(figsize=(18, 12), dpi= 80, facecolor='w', edgecolor='k')
@@ -18,27 +21,31 @@ def plot_results(predicted_data, true_data,title='',save = False):
     plt.title(title)
     plt.legend()
     if(save):
-        plt.savefig(plot_directory + title + ".png")
+        # plt.savefig(plot_directory + title + ".png")
+        savePlot(plt,plot_directory + title + ".png")
     plt.show()
 
-def plot_history(history):
+def plot_history(history,title='',save = False):
     plt.figure()
     plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
+    # plt.plot(history.history['val_loss'])
     plt.title('model loss')
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='best')
     plt.show()
+    if(save):
+        # plt.savefig(plot_directory + title + ".png")
+        savePlot(plt,plot_directory + title + ".png")
 
-    plt.figure()
-    plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
-    plt.title('model accuracy')
-    plt.ylabel('acc')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='best')
-    plt.show()
+    # plt.figure()
+    # plt.plot(history.history['acc'])
+    # # plt.plot(history.history['val_acc'])
+    # plt.title('model accuracy')
+    # plt.ylabel('acc')
+    # plt.xlabel('epoch')
+    # plt.legend(['train', 'test'], loc='best')
+    # plt.show()
 
 
 
