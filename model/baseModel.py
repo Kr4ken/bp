@@ -37,16 +37,17 @@ class baseModel(object):
 
     def get_network(self):
         if (not self.refresh and os.path.isfile(self.filename)):
-            return self.load_network()
+            return self.__load_network()
         else:
-            return self.fit_model_threaded()
+            return self.__fit_model_threaded()
             # return self.build_network()
+
 
     def build_network(self):
         print('> Собираем ' + self.name + ' модель сети')
         return None
 
-    def load_network(self):
+    def __load_network(self):
         # Load the h5 saved model and weights
         print('> Загружаем ' + self.name + ' модель сети')
         if (os.path.isfile(self.filename)):
@@ -56,6 +57,7 @@ class baseModel(object):
             print('ОШИБКА: "' + self.filename + '" Файл не содержит h5 модель\n')
             return None
 
+    #TODO: Понять что за старая тренировка и чем отличается от обычной
     def fit_model_threaded_old(self):
         print('> Тренируем модель ' + self.name)
         self.model = self.build_network()
@@ -70,7 +72,7 @@ class baseModel(object):
         print('> Модель создана! веса сохранены ', output_file)
         return self.model
 
-    def fit_model_threaded(self):
+    def __fit_model_threaded(self):
         print('> Тренируем модель ' + self.name)
         self.model = self.build_network()
         output_file = self.filename

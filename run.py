@@ -8,6 +8,7 @@ epochs = 400
 x_windows_size = 200
 filter_cols = ["Close"]
 
+#TODO Накатать нормальную главную программу и считывание параметров из конфига.
 # data = bitdata(
 #     data_filepath='/home/kraken/projects/bitcoin_project/data/',
 #     source_filename='coinbaseUSD',

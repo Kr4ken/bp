@@ -49,7 +49,7 @@ class simpleModel(baseModel):
         print("> Время компиляции : ", time.time() - start)
         return self.model
 
-    def fit_model_threaded(self):
+    def __fit_model_threaded(self):
         print('> Тренируем модель ' + self.name)
         print('АЛЯРМА, я нужный метод')
         self.model = self.build_network()
@@ -68,9 +68,9 @@ class simpleModel(baseModel):
 
     def get_network(self):
         if (not self.refresh and os.path.isfile(self.filename)):
-            return self.load_network()
+            return self.__load_network()
         else:
-            return self.fit_model_threaded()
+            return self.__fit_model_threaded()
 
 
     def get_predictions_true_data(self):

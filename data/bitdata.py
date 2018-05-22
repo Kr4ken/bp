@@ -80,7 +80,7 @@ class bitdata(object):
         print("> Фильтрованый файл ", filter_file)
         if not os.path.isfile(filter_file) or refresh:
             print("> Не найден. Создаем.")
-            self.create_filter_date_datafile(start_date, end_date)
+            self.__create_filter_date_datafile(start_date, end_date)
 
         # Создание/загрузка результирующего файла
         self.clean_filename = self.__get_clean_filename(self.x_window_size,y_windows_size)
@@ -88,7 +88,7 @@ class bitdata(object):
         print("> Очищенный файл ", clean_file)
         if not os.path.isfile(clean_file) or refresh:
             print("> Не найден. Создаем.")
-            self.create_clean_datafile()
+            self.__create_clean_datafile()
 
         # Получение данных по результирующей выборке
         with h5py.File(clean_file, 'r') as hf:
@@ -155,7 +155,7 @@ class bitdata(object):
                 yield (data_x, data_y)
 
     # Создание файла с фильтрацией по дате
-    def create_filter_date_datafile(self,start_date, end_date):
+    def __create_filter_date_datafile(self, start_date, end_date):
         print('> Создание файлов данных с фильтром по времени...')
         filename_in = self.data_filepath + self.source_filename + "." + self.source_extension
         filename_out = self.__get_filter_filename(start_date, end_date) + "."+ self.source_extension
@@ -167,18 +167,16 @@ class bitdata(object):
         result_data.to_csv(filename_out)
         print('> Отфильтрованные данные сохранены в `' + filename_out + '`')
 
-    def create_clean_datafile(self):
+    def __create_clean_datafile(self):
         """Подготовка данных для последующего моделирования"""
         print('> Создание очищенных x & y файлов с данными...')
-        # filename_out = self.data_filepath + self.clean_filename + "." + self.filename_extension
-        # filename_in = self.data_filepath + self.source_filename + "." + self.filename_extension
         filename_in = self.filter_filename + "." + self.source_extension
         filename_out = self.clean_filename + "." + self.filename_extension
         print('> Из ', filename_in)
         print('> Создание очищенные массивы в ',filename_out)
 
 
-        data_gen = self.clean_data_generator(
+        data_gen = self.__clean_data_generator(
             filename_in,
             batch_size=self.batch_size,
             x_window_size=self.x_window_size,
@@ -196,6 +194,7 @@ class bitdata(object):
             # Initialise hdf5 x, y datasets with first chunk of data
             # Инициализируем hdf5, x, y данные с первыми кусками данных
             rcount_x = x1.shape[0]
+            #TODO Выяснить что здесь происходит, почему максшейп именно такой
             dset_x = hf.create_dataset('x', shape=x1.shape, maxshape=(None, x1.shape[1], x1.shape[2]), chunks=True)
             dset_x[:] = x1
             rcount_y = y1.shape[0]
@@ -215,10 +214,9 @@ class bitdata(object):
                 rcount_y += y_batch.shape[0]
                 i += 1
 
-        # print('> Clean datasets created in file `' + filename_out + '.h5`')
         print('> Очищенные данные сохранены в `' + filename_out + '`')
 
-    def clean_data_generator(self, filepath, batch_size, x_window_size, y_window_size, y_col, filter_cols, normalise):
+    def __clean_data_generator(self, filepath, batch_size, x_window_size, y_window_size, y_col, filter_cols, normalise):
         """Очистка и нормализация данных в группах  размера `batch_size`"""
         data = pd.read_csv(filepath, index_col=0)
 
@@ -245,10 +243,12 @@ class bitdata(object):
                 continue
 
             # Нормализуем данные
+            #TODO: y нормализуется относительно величины X, почему так?
             if (normalise):
                 abs_base, x_window_data = self.__zero_base_standardise(x_window_data)
                 _, y_window_data = self.__zero_base_standardise(y_window_data, abs_base=abs_base)
 
+            #TODO: Что это, зачем это?
             # Усредненный данные по интересующему столбцу
             y_average = np.average(y_window_data.values[:, y_col])
             x_data.append(x_window_data.values)
@@ -264,6 +264,7 @@ class bitdata(object):
                 y_data = []
                 yield (x_np_arr, y_np_arr)
 
+    #TODO: Что за abs_base
     def __zero_base_standardise(self, data, abs_base=pd.DataFrame()):
         """Standardise dataframe to be zero based percentage returns from i=0"""
         """Нормализация по первому элементу"""
