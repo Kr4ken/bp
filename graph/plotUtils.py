@@ -35,7 +35,7 @@ def plot_results(predicted_data, true_data, title='', save=False):
         plt.show()
 
 
-#TODO Выяснить для чего это
+# Отрисовывает ошибки на каждой эпохе во время обучения
 def plot_history(history, title='', save=False):
     plt.figure()
     plt.plot(history.history['loss'])

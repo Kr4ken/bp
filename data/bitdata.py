@@ -194,7 +194,8 @@ class bitdata(object):
             # Initialise hdf5 x, y datasets with first chunk of data
             # Инициализируем hdf5, x, y данные с первыми кусками данных
             rcount_x = x1.shape[0]
-            #TODO Выяснить что здесь происходит, почему максшейп именно такой
+            # Короче maxshape  - это просто форма, максимально до которой может разрастиь
+            # И тут происходит максимальное расширение допустимой формы до 3 параметров
             dset_x = hf.create_dataset('x', shape=x1.shape, maxshape=(None, x1.shape[1], x1.shape[2]), chunks=True)
             dset_x[:] = x1
             rcount_y = y1.shape[0]
@@ -243,12 +244,13 @@ class bitdata(object):
                 continue
 
             # Нормализуем данные
-            #TODO: y нормализуется относительно величины X, почему так?
+            # Уже потом понял принцип этой нормализации, сперва берется знаение x0, а все остальные уже относительно него
             if (normalise):
                 abs_base, x_window_data = self.__zero_base_standardise(x_window_data)
                 _, y_window_data = self.__zero_base_standardise(y_window_data, abs_base=abs_base)
 
-            #TODO: Что это, зачем это?
+            # В случае если для y прогнозируем больше одного значниея, все равно смотрим лишь их среднее, а не все окно целиков,
+            # Что то это не очень как по мне
             # Усредненный данные по интересующему столбцу
             y_average = np.average(y_window_data.values[:, y_col])
             x_data.append(x_window_data.values)
@@ -264,7 +266,6 @@ class bitdata(object):
                 y_data = []
                 yield (x_np_arr, y_np_arr)
 
-    #TODO: Что за abs_base
     def __zero_base_standardise(self, data, abs_base=pd.DataFrame()):
         """Standardise dataframe to be zero based percentage returns from i=0"""
         """Нормализация по первому элементу"""

@@ -57,7 +57,7 @@ class baseModel(object):
             print('ОШИБКА: "' + self.filename + '" Файл не содержит h5 модель\n')
             return None
 
-    #TODO: Понять что за старая тренировка и чем отличается от обычной
+    # Ничем не отличается от той, с которой работаю сейчас, оставил просто как пример того, как было исходно
     def fit_model_threaded_old(self):
         print('> Тренируем модель ' + self.name)
         self.model = self.build_network()
