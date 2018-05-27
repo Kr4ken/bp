@@ -16,10 +16,12 @@ class baseModel(object):
     steps_per_epoch = 0
     validation_steps = 0
     epochs = 0
+    x_window=100
+    y_widnow=1
     refresh = False
     history = None
 
-    def __init__(self, model_filepath, data,steps_per_epoch = 0,epochs = 1,refresh = False):
+    def __init__(self, model_filepath, data,steps_per_epoch = 0,epochs = 1,refresh = False,x_window=100,y_window=1):
         super(baseModel, self).__init__()
         print('> Инициализируем модель сети  ' + self.name)
         self.model_filepath = model_filepath
@@ -28,6 +30,8 @@ class baseModel(object):
         self.epochs = epochs
         self.filename = self.model_filepath + self.name + ".h5"
         self.refresh = refresh
+        self.x_window = x_window
+        self.y_widnow = y_window
         if steps_per_epoch == 0:
             self.steps_per_epoch = int(data.ntrain /epochs / data.batch_size)
         self.validation_steps = int(data.ntest /epochs / data.batch_size)
@@ -58,7 +62,7 @@ class baseModel(object):
             return None
 
     # Ничем не отличается от той, с которой работаю сейчас, оставил просто как пример того, как было исходно
-    def fit_model_threaded_old(self):
+    def __fit_model_threaded_old(self):
         print('> Тренируем модель ' + self.name)
         self.model = self.build_network()
         output_file = self.filename
@@ -81,9 +85,9 @@ class baseModel(object):
         self.history = self.model.fit_generator(
             self.model_data.get_generator_clean_data(),
             steps_per_epoch=self.steps_per_epoch,
-            epochs=self.epochs
-            # validation_data=self.model_data.get_generator_clean_data_test(),
-            # validation_steps=self.validation_steps
+            epochs=self.epochs,
+            validation_data=self.model_data.get_generator_clean_data_test(),
+            validation_steps=self.validation_steps
         )
         self.model.save(output_file)
         print('> Модель создана! веса сохранены ', output_file)

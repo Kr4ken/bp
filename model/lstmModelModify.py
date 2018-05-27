@@ -5,22 +5,26 @@ from keras.models import Sequential
 from model.baseModel import baseModel
 
 
-class lstmModel(baseModel):
+class lstmModelModify(baseModel):
     filename = 'LSTM.h5'
     name = 'LSTM'
     loss_function = ''
     optimiser_function = ''
     layers =[]
+    x_window = 100
+    y_window = 1
 
-    def __init__(self, model_filepath, data,steps_per_epoch = 0,epochs = 1,refresh = False):
+    def __init__(self, model_filepath, data,steps_per_epoch = 0,epochs = 1,refresh = False,x_window=100,y_window=1,layers=[150,150]):
         self.loss_function = 'mse'
         self.optimiser_function = 'Nadam'
-        self.layers = [data.ncols, 150, 150, 1]
-        self.name = self.name + '_' + "_".join([str(x) for x in self.layers])+ "_"+str(epochs)
-        super(lstmModel, self).__init__(model_filepath,data,steps_per_epoch,epochs,refresh)
+        # self.layers = [data.ncols, 150, 150, 1]
+        # self.layers = [data.ncols, 150, 150, 10]
+        self.layers = [data.ncols]  + layers + [y_window]
+        self.name = self.name + '_' + "_".join([str(x) for x in self.layers])+ "_epochs="+str(epochs)
+        super(lstmModelModify, self).__init__(model_filepath=model_filepath,data=data,steps_per_epoch=steps_per_epoch,epochs=epochs,refresh=refresh,x_window=x_window,y_window=y_window)
 
     def build_network(self):
-        super(lstmModel, self).build_network()
+        super(lstmModelModify, self).build_network()
         self.model = Sequential()
 
         self.model.add(LSTM(

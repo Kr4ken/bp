@@ -43,6 +43,8 @@ class bitdata(object):
     ntest = 0
     # Часть тренировочной тестируемой
     train_rate = 0.9
+    # В случае массив y брать его целиком или среднее
+    average = False
 
 
     def __init__(self,
@@ -199,7 +201,8 @@ class bitdata(object):
             dset_x = hf.create_dataset('x', shape=x1.shape, maxshape=(None, x1.shape[1], x1.shape[2]), chunks=True)
             dset_x[:] = x1
             rcount_y = y1.shape[0]
-            dset_y = hf.create_dataset('y', shape=y1.shape, maxshape=(None,), chunks=True)
+            # TODO:Проверить
+            dset_y = hf.create_dataset('y', shape=y1.shape, maxshape=(None,y1.shape[1]), chunks=True)
             dset_y[:] = y1
             print('> Создаем x & y файлы с данными | Группа:', i, end='\n')
             for x_batch, y_batch in data_gen:
@@ -252,9 +255,12 @@ class bitdata(object):
             # В случае если для y прогнозируем больше одного значниея, все равно смотрим лишь их среднее, а не все окно целиков,
             # Что то это не очень как по мне
             # Усредненный данные по интересующему столбцу
-            y_average = np.average(y_window_data.values[:, y_col])
             x_data.append(x_window_data.values)
-            y_data.append(y_average)
+            if(self.average):
+                y_average = np.average(y_window_data.values[:, y_col])
+                y_data.append(y_average)
+            else:
+                y_data.append(y_window_data.values[:,y_col])
             i += 1
 
             # Не выбрасываем значение до тех пор пока не наберется достаточно данных x и y для следующей пачки
