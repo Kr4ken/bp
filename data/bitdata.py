@@ -46,6 +46,8 @@ class bitdata(object):
     # В случае массив y брать его целиком или среднее
     average = False
 
+    type =''
+
 
     def __init__(self,
                  data_filepath,
@@ -60,6 +62,7 @@ class bitdata(object):
                  filter_cols = None,
                  normalize = True,
                  y_col = 'Close',
+                 type = '',
                  refresh = False):
         print("> Инициализация модели данных из " + source_filename + " для данных c " + start_date + " по " + end_date)
         # Параметры файлов
@@ -75,14 +78,15 @@ class bitdata(object):
         self.normalize = normalize
         self.y_col = y_col
         self.batch_size = batch_size
+        self.type = type
 
         # Создание/загрузка отфильтрованного файла
-        self.filter_filename = self.__get_filter_filename(start_date, end_date)
+        self.filter_filename = self.__get_filter_filename(start_date, end_date,self.type)
         filter_file = self.filter_filename + "."+source_extension
         print("> Фильтрованый файл ", filter_file)
         if not os.path.isfile(filter_file) or refresh:
             print("> Не найден. Создаем.")
-            self.__create_filter_date_datafile(start_date, end_date)
+            self.__create_filter_date_datafile(start_date, end_date,self.type)
 
         # Создание/загрузка результирующего файла
         self.clean_filename = self.__get_clean_filename(self.x_window_size,y_windows_size)
@@ -103,8 +107,8 @@ class bitdata(object):
 
 
     # Функция генерации наименования файла фильтрации
-    def __get_filter_filename(self, start_date, end_date):
-       return self.data_filepath + self.source_filename+ "|" + start_date+"-"+end_date
+    def __get_filter_filename(self, start_date, end_date,type):
+       return self.data_filepath + self.source_filename+ "|" + start_date+"-"+end_date + "|" + type
 
     # Функция генерации наименования результирующего файла
     def __get_clean_filename(self, x_window, y_window):
@@ -157,15 +161,19 @@ class bitdata(object):
                 yield (data_x, data_y)
 
     # Создание файла с фильтрацией по дате
-    def __create_filter_date_datafile(self, start_date, end_date):
+    def __create_filter_date_datafile(self, start_date, end_date,period=''):
         print('> Создание файлов данных с фильтром по времени...')
         filename_in = self.data_filepath + self.source_filename + "." + self.source_extension
-        filename_out = self.__get_filter_filename(start_date, end_date) + "."+ self.source_extension
+        filename_out = self.__get_filter_filename(start_date, end_date,self.type) + "."+ self.source_extension
         print('> Сохраняем в файл ',filename_out)
         data = pd.read_csv(filename_in, index_col=0)
         begin = dateutil.parser.parse(start_date)
         end = dateutil.parser.parse(end_date)
         result_data = data.loc[data.index.isin(range(int(begin.timestamp()), int(end.timestamp())))]
+        if period == 'MONTHS':
+            result_data = result_data[::60*24*30]
+        elif period == "DAYS":
+            result_data = result_data[::60*24]
         result_data.to_csv(filename_out)
         print('> Отфильтрованные данные сохранены в `' + filename_out + '`')
 
