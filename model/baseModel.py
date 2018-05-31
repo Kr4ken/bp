@@ -2,6 +2,8 @@ import warnings
 import json
 import os
 from keras.models import load_model
+import numpy as np
+
 warnings.filterwarnings("ignore")  # Hide messy Numpy warnings
 
 
@@ -107,20 +109,30 @@ class baseModel(object):
         multi_predictions=[]
         data_gen_test = self.model_data.get_generator_clean_data_test()
 
-        def generator_strip_xy(data_gen, true_values):
-            for x, y in data_gen:
-                true_values += list(y)
-                yield x
-
         steps_test = int(self.model_data.ntest / self.model_data.batch_size)
         print('> Тестируем модель на ', self.model_data.ntest, ' строках с ', steps_test, ' шагами')
 
-        predictions = self.model.predict_generator(
-            generator_strip_xy(data_gen_test, true_values),
-            steps=steps_test
-        )
+        for x,y in data_gen_test:
+            if len(x) == 0:
+                break
+            for i in range(len(x)-steps):
+                true_value=[]
+                multi_prediction = []
+                x_curr = x[i]
+                y_curr = y[i]
+                for step in range(steps):
+                    prediction = self.model.predict(x_curr.reshape(1,self.x_window,1))
+                    # x_curr = x_curr[1:] + [prediction]
+                    x_curr = x_curr[1:]
+                    # x_curr.put(self.x_window-2,prediction)
+                    x_curr = np.append(x_curr,prediction)
+                    y_curr = y[i+step]
+                    true_value.append(y_curr)
+                    multi_prediction.append(prediction)
+                true_values.append(true_value)
+                multi_predictions.append(multi_prediction)
 
-        return predictions, true_values       
+        return multi_prediction, true_values
 
     def get_predictions_true_data(self):
         true_values = []

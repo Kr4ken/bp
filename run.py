@@ -4,6 +4,7 @@ from model.lstmModelModify import lstmModelModify
 from model.lagModel import lagModel
 from model.baseModel import baseModel
 from model.simpleModel import simpleModel
+from model.randomWalkModel import randomWalkModel
 import graph.plotUtils
 from  config.bpconfig import BPConfig
 
@@ -152,8 +153,8 @@ data = bitdata(
     data_filepath='/home/kraken/projects/bitcoin_project/data/',
     source_filename='coinbaseUSD',
     # start_date='12.01.2017',
-    # start_date='11.01.2017',
-    start_date='12.31.2017',
+    start_date='11.01.2017',
+    # start_date='12.31.2017',
     end_date='01.01.2018',
     filter_cols=['Close'],
     batch_size=100,
@@ -162,14 +163,29 @@ data = bitdata(
     # type='MONTHS',
     refresh = False
 )
-model = lagModel(
+
+model = lstmModelModify(
     model_filepath='/home/kraken/projects/bitcoin_project/model/',
-    data=data
+    y_window=1,
+    x_window=100,
+    layers=[150,150],
+    data=data,
+    epochs=5
 )
 
+# model = randomWalkModel(
+#     model_filepath='/home/kraken/projects/bitcoin_project/model/',
+#     # y_window=1,
+#     # x_window=100,
+#     # layers=[150,150],
+#     data=data
+#     # epochs=5
+# )
 model_network = model.get_network()
+# model.build_network()
 prediction, true_value = model.get_predictions_true_data()
-save_prediction_and_true(prediction=prediction,true_value=true_value,filename=result_filename_generator(epochs=1,x_window=1,y_window=1,filter_cols=[1],layers=[1]))
+# prediction, true_value = model.get_multistep_predictions_true_data(20)
+save_prediction_and_true(prediction=prediction,true_value=true_value,filename=result_filename_generator(epochs=1,x_window=1,y_window=1,filter_cols=[1],layers=['randomWalk']))
 
 
 # graph.plotUtils.plot_results(prediction[:200], true_value[:200],'LSTM 15 epochs win_size 50',save=True)

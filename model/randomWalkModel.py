@@ -1,5 +1,6 @@
 import time
 from model.baseModel import baseModel
+import math
 import seaborn as sns
 sns.despine()
 from keras.models import Sequential
@@ -8,14 +9,19 @@ from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import *
 from keras import regularizers
 import os
+import numpy as np
 
 
-class lagModel(baseModel):
-    fileName = 'Lag.h5'
-    name = 'Lag'
+class randomWalkModel(baseModel):
+    fileName = 'RandomWalk.h5'
+    name = 'RandomWalk'
+    mu = 0
+    sigma = 0.1
 
-    def __init__(self, model_filepath, data,steps_per_epoch = 0,epochs = 1,refresh = False):
-        super(lagModel, self).__init__(model_filepath, data, steps_per_epoch, epochs, refresh)
+    def __init__(self, model_filepath, data,steps_per_epoch = 0,epochs = 1,refresh = False,mu=0,sigma=0.1):
+        super(randomWalkModel, self).__init__(model_filepath, data, steps_per_epoch, epochs, refresh)
+        self.mu = mu
+        self.sigma = sigma
 
     def build_network(self):
         return self.model
@@ -42,16 +48,10 @@ class lagModel(baseModel):
             if len(x) == 0:
                 break
             true_values += list(y)
-
-        predictions += [true_values[0]] + true_values[:-1]
-
-        # steps_test = int(self.model_data.ntest / self.model_data.batch_size)
-        # print('> Тестируем модель на', self.model_data.ntest, 'строках с', steps_test, 'шагами')
-        # temp = list(generator_strip_xy(data_gen_test,true_values))
-        # predictions = [true_values[0]] + true_values[:-1]
-        # predictions = self.model.predict_generator(
-        #     generator_strip_xy(data_gen_test, true_values),
-        #     steps=steps_test
-        # )
+            lx = list(x)[:-1]
+            lx1 = list(x)[1:]
+            diff =[abs(abs(lx[k]) - abs(lx1[k])) for k in range(len(lx))]
+            mean = math.sqrt(np.array(diff).mean())
+            predictions += [np.random.normal(self.mu,mean,1)[0] + list(pred)[-1] for pred in x]
 
         return predictions, true_values
