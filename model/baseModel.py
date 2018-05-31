@@ -37,6 +37,14 @@ class baseModel(object):
         self.validation_steps = int(data.ntest /epochs / data.batch_size)
         # self.validation_steps = int(data.ntest / data.batch_size)
 
+    def train_network(self):
+        if (not self.refresh and os.path.isfile(self.filename)):
+            print('> Сеть уже натренирована, просто загружаем её из файла')
+            self.__load_network();
+        else:
+            print('> Стартуем тренировку')
+            self.__fit_model_threaded()
+            print('> Готово')
 
 
     def get_network(self):
@@ -92,6 +100,27 @@ class baseModel(object):
         self.model.save(output_file)
         print('> Модель создана! веса сохранены ', output_file)
         return self.model
+
+    # Использовать только для случая, когда y_window=1
+    def get_multistep_predictions_true_data(self,steps=1):
+        true_values = []
+        multi_predictions=[]
+        data_gen_test = self.model_data.get_generator_clean_data_test()
+
+        def generator_strip_xy(data_gen, true_values):
+            for x, y in data_gen:
+                true_values += list(y)
+                yield x
+
+        steps_test = int(self.model_data.ntest / self.model_data.batch_size)
+        print('> Тестируем модель на ', self.model_data.ntest, ' строках с ', steps_test, ' шагами')
+
+        predictions = self.model.predict_generator(
+            generator_strip_xy(data_gen_test, true_values),
+            steps=steps_test
+        )
+
+        return predictions, true_values       
 
     def get_predictions_true_data(self):
         true_values = []
