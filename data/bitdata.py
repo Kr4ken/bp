@@ -114,6 +114,18 @@ class bitdata(object):
     def __get_clean_filename(self, x_window, y_window):
         return self.filter_filename + "_x="+str(x_window) +"_y="+str(y_window)
 
+    def get_generator_clean_data_with_norm():
+        clean_file = self.clean_filename + "." + self.filename_extension
+        with h5py.File(clean_file, 'r') as hf:
+            i = 0
+            while True:
+                data_x = hf['x'][i:i + self.batch_size]
+                data_y = hf['y'][i:i + self.batch_size]
+                data_n = hf['n'][i:i + self.batch_size]
+                i += self.batch_size
+                yield (data_x, data_y,data_n)
+
+
     def get_generator_clean_data(self):
         """Создание генератора для подтягивания записей из результирующего файла"""
         clean_file = self.clean_filename + "." + self.filename_extension
@@ -135,6 +147,18 @@ class bitdata(object):
                 data_y = hf['y'][i:i + self.batch_size]
                 i += self.batch_size
                 yield (data_x, data_y)
+
+    def get_generator_clean_data_test_with_norm(self):
+        """Создание генератора для подтягивания записей из файла для тестирования начиная с индекса ntrain"""
+        clean_file = self.clean_filename + "." + self.filename_extension
+        with h5py.File(clean_file, 'r') as hf:
+            i = self.ntrain
+            while True:
+                data_x = hf['x'][i:i + self.batch_size]
+                data_y = hf['y'][i:i + self.batch_size]
+                data_n = hf['n'][i:i + self.batch_size]
+                i += self.batch_size
+                yield (data_x, data_y,data_n)
 
     def get_generator_clean_data_test(self):
         """Создание генератора для подтягивания записей из файла для тестирования начиная с индекса ntrain"""
@@ -198,9 +222,11 @@ class bitdata(object):
 
         i = 0
 
+        # Создаем файл для записи норм
+        hfn = h5py.File(filename_out_norm,'w')
         # Открываем файл на запись
         with h5py.File(filename_out, 'w') as hf:
-            x1, y1 = next(data_gen)
+            x1, y1,norm_1 = next(data_gen)
             # Initialise hdf5 x, y datasets with first chunk of data
             # Инициализируем hdf5, x, y данные с первыми кусками данных
             rcount_x = x1.shape[0]
@@ -212,8 +238,12 @@ class bitdata(object):
             # TODO:Проверить
             dset_y = hf.create_dataset('y', shape=y1.shape, maxshape=(None,y1.shape[1]), chunks=True)
             dset_y[:] = y1
+
+            rcount_norm = norm_1.shape[0]
+            dset_norm = hf.create_dataset('n', shape=norm_1.shape, chunks=True)
+            dset_norm[:]=norm_1
             print('> Создаем x & y файлы с данными | Группа:', i, end='\n')
-            for x_batch, y_batch in data_gen:
+            for x_batch, y_batch, norm_batch in data_gen:
                 # Append batches to x, y hdf5 datasets
                 # Добавляем данные x,y  к hdf5 множествам данных
                 # print('> Creating x & y data files | Batch:', i, end='\r')
@@ -224,6 +254,9 @@ class bitdata(object):
                 dset_y.resize(rcount_y + y_batch.shape[0], axis=0)
                 dset_y[rcount_y:] = y_batch
                 rcount_y += y_batch.shape[0]
+                dset_norm.resize(rcount_norm + norm_batch.shape[0], axis=0)
+                dset_norm[rcount_norm:] = norm_batch
+                rcount_norm += norm_batch.shape[0]
                 i += 1
 
         print('> Очищенные данные сохранены в `' + filename_out + '`')
@@ -244,6 +277,7 @@ class bitdata(object):
         num_rows = len(data)
         x_data = []
         y_data = []
+        norm_data=[]
         i = 0
         while ((i + x_window_size + y_window_size) <= num_rows):
             x_window_data = data[i:(i + x_window_size)]
@@ -270,6 +304,7 @@ class bitdata(object):
             else:
                 y_data.append(y_window_data.values[:,y_col])
             i += 1
+            norm_data.append(abs_base)
 
             # Не выбрасываем значение до тех пор пока не наберется достаточно данных x и y для следующей пачки
             if (i % batch_size == 0):
@@ -278,7 +313,7 @@ class bitdata(object):
                 y_np_arr = np.array(y_data)
                 x_data = []
                 y_data = []
-                yield (x_np_arr, y_np_arr)
+                yield (x_np_arr, y_np_arr,norm_data)
 
     def __zero_base_standardise(self, data, abs_base=pd.DataFrame()):
         """Standardise dataframe to be zero based percentage returns from i=0"""

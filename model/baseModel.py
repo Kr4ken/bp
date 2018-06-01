@@ -134,6 +134,32 @@ class baseModel(object):
 
         return multi_prediction, true_values
 
+    // TODO: Протестировать
+    // TODO: Тщательно протестировать
+    def get_predictions_true_data_with_norm(self):
+        true_values = []
+        norms = []
+
+        data_gen_test = self.model_data.get_generator_clean_data_test_with_norm()
+
+        def generator_strip_xy(data_gen, true_values):
+            for x, y,n in data_gen:
+                true_values += list(y)
+                norms += list(n)
+                yield x
+
+        steps_test = int(self.model_data.ntest / self.model_data.batch_size)
+        print('> Тестируем модель на', self.model_data.ntest, 'строках с', steps_test, 'шагами')
+
+        predictions = self.model.predict_generator(
+            generator_strip_xy(data_gen_test, true_values),
+            steps=steps_test
+        )
+
+        true_values = [(a+1)*b for a,b in zip(true_values,norms)]
+        predictions = [(a+1)*b for a,b in zip(predictions,norms)]
+        return predictions, true_values
+
     def get_predictions_true_data(self):
         true_values = []
 
