@@ -3,6 +3,15 @@ import numpy as np
 import pandas as pd
 import dateutil
 import os.path
+from enum import Enum
+import datetime
+
+
+class period(Enum):
+    MINUTES = 'minutes'
+    HOURS = 'hours'
+    DAYS = 'days'
+    MONTHS = 'months'
 
 class bitdata(object):
     # Директория файлов с данными
@@ -46,7 +55,7 @@ class bitdata(object):
     # В случае массив y брать его целиком или среднее
     average = False
 
-    type =''
+    type =period.MINUTES
 
 
     def __init__(self,
@@ -62,7 +71,7 @@ class bitdata(object):
                  filter_cols = None,
                  normalize = True,
                  y_col = 'Close',
-                 type = '',
+                 type = period.DAYS,
                  refresh = False):
         print("> Инициализация модели данных из " + source_filename + " для данных c " + start_date + " по " + end_date)
         # Параметры файлов
@@ -86,7 +95,7 @@ class bitdata(object):
         print("> Фильтрованый файл ", filter_file)
         if not os.path.isfile(filter_file) or refresh:
             print("> Не найден. Создаем.")
-            self.__create_filter_date_datafile(start_date, end_date,self.type)
+            self.__create_filter_date_datafile(start_date, end_date)
 
         # Создание/загрузка результирующего файла
         self.clean_filename = self.__get_clean_filename(self.x_window_size,y_windows_size)
@@ -108,7 +117,7 @@ class bitdata(object):
 
     # Функция генерации наименования файла фильтрации
     def __get_filter_filename(self, start_date, end_date,type):
-       return self.data_filepath + self.source_filename+ "|" + start_date+"-"+end_date + "|" + type
+       return self.data_filepath + self.source_filename+ "|" + start_date+"-"+end_date + "|" + str(type)
 
     # Функция генерации наименования результирующего файла
     def __get_clean_filename(self, x_window, y_window):
@@ -184,8 +193,25 @@ class bitdata(object):
                 i += self.batch_size
                 yield (data_x, data_y)
 
+    def __date_generator(self,start_date,end_date,time_period = period.MINUTES):
+        while start_date < end_date:
+            temp = start_date
+            if time_period == period.MONTHS:
+                start_date+= datetime.timedelta(days=30);
+                yield (temp.timestamp(),start_date.timestamp())
+            elif time_period == period.DAYS:
+                start_date+= datetime.timedelta(days=1);
+                yield (temp.timestamp(),start_date.timestamp())
+            elif time_period == period.HOURS:
+                start_date+= datetime.timedelta(hours=1);
+                yield (temp.timestamp(),start_date.timestamp())
+            else:
+                start_date+= datetime.timedelta(minutes=1);
+                yield (temp.timestamp(),start_date.timestamp())
+
+
     # Создание файла с фильтрацией по дате
-    def __create_filter_date_datafile(self, start_date, end_date,period=''):
+    def __create_filter_date_datafile(self, start_date, end_date):
         print('> Создание файлов данных с фильтром по времени...')
         filename_in = self.data_filepath + self.source_filename + "." + self.source_extension
         filename_out = self.__get_filter_filename(start_date, end_date,self.type) + "."+ self.source_extension
@@ -193,12 +219,22 @@ class bitdata(object):
         data = pd.read_csv(filename_in, index_col=0)
         begin = dateutil.parser.parse(start_date)
         end = dateutil.parser.parse(end_date)
-        result_data = data.loc[data.index.isin(range(int(begin.timestamp()), int(end.timestamp())))]
-        if period == 'MONTHS':
-            result_data = result_data[::60*24*30]
-        elif period == "DAYS":
-            result_data = result_data[::60*24]
-        result_data.to_csv(filename_out)
+        # result_data = data.loc[data.index.isin(range(int(begin.timestamp()), int(end.timestamp())))]
+        result_data = data.loc[begin.timestamp():end.timestamp()]
+        date = self.__date_generator(begin,end,self.type)
+        res = pd.DataFrame(columns=data.columns)
+        res.index.name = 'Timestamp'
+        for start,end in date:
+            Open = data.loc[start]['Open']
+            High = data.loc[start:end].agg(['max'])['High']['max']
+            Low = data.loc[start:end].agg(['min'])['Low']['min']
+            Close = data.loc[end]['Close']
+            Volume_BTC = data.loc[start:end].agg(['sum'])['Volume_(BTC)']['sum']
+            Volume_Currency =data.loc[start:end].agg(['sum'])['Volume_(Currency)']['sum']
+            Weighted_Price = data.loc[start:end].mean()['Weighted_Price']
+            seria = pd.Series(name=int(start),data={ 'Open':Open, 'High':High, 'Low':Low, 'Close':Close, 'Volume_(BTC)':Volume_BTC, 'Volume_(Currency)':Volume_Currency, 'Weighted_Price':Weighted_Price })
+            res = res.append(seria)
+        res.to_csv(filename_out)
         print('> Отфильтрованные данные сохранены в `' + filename_out + '`')
 
     def __create_clean_datafile(self):
@@ -208,7 +244,6 @@ class bitdata(object):
         filename_out = self.clean_filename + "." + self.filename_extension
         print('> Из ', filename_in)
         print('> Создание очищенные массивы в ',filename_out)
-
 
         data_gen = self.__clean_data_generator(
             filename_in,

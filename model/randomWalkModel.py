@@ -129,7 +129,7 @@ class randomWalkModel(baseModel):
         true_values = []
         predictions = []
 
-        data_gen_test = self.model_data.get_generator_clean_data()
+        data_gen_test = self.model_data.get_generator_clean_data_test()
 
         for x, y in data_gen_test:
             if len(x) == 0:

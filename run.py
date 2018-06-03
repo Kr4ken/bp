@@ -1,4 +1,4 @@
-from data.bitdata import bitdata
+from data.bitdata import bitdata,period
 from model.lstmModel import lstmModel
 from model.lstmModelModify import lstmModelModify
 from model.lagModel import lagModel
@@ -251,7 +251,7 @@ layerses =[
 #                     else:
 #                         print('>>> Уже сделано')
 
-start_date = '11.01.2017'
+start_date = '01.01.2017'
 end_date = '01.01.2018'
 filter_cols = ['Close']
 layers = [150, 150]
@@ -260,6 +260,7 @@ y_window = 1
 epochs = 10
 refresh = False
 multi_step = 10
+type=period.HOURS
 
 data = bitdata(
     data_filepath='/home/kraken/projects/bitcoin_project/data/',
@@ -270,7 +271,8 @@ data = bitdata(
     batch_size=x_window,
     x_windows_size=x_window,
     y_windows_size=y_window,
-    refresh=refresh
+    refresh=refresh,
+    type=type
 )
 
 # model = lstmModelModify(
@@ -281,7 +283,8 @@ data = bitdata(
 #     data=data,
 #     epochs=epochs,
 #     refresh=refresh
-# }
+# )
+
 
 
 # model = randomWalkModel(

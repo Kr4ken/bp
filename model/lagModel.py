@@ -36,7 +36,7 @@ class lagModel(baseModel):
         predictions = []
         norms =[]
 
-        data_gen_test = self.model_data.get_generator_clean_data_with_norm()
+        data_gen_test = self.model_data.get_generator_clean_data_test_with_norm()
 
         for x, y, n in data_gen_test:
             if len(x) == 0:
@@ -55,7 +55,7 @@ class lagModel(baseModel):
         true_values = []
         predictions = []
 
-        data_gen_test = self.model_data.get_generator_clean_data()
+        data_gen_test = self.model_data.get_generator_clean_data_test()
 
         for x, y in data_gen_test:
             if len(x) == 0:
