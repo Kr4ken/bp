@@ -31,6 +31,25 @@ class lagModel(baseModel):
         else:
             return self.__fit_model_threaded()
 
+    def get_predictions_true_data_with_norm(self):
+        true_values = []
+        predictions = []
+        norms =[]
+
+        data_gen_test = self.model_data.get_generator_clean_data_with_norm()
+
+        for x, y, n in data_gen_test:
+            if len(x) == 0:
+                break
+            true_values += list(y)
+            norms += list(n)
+
+        predictions = [true_values[0]] + true_values[:-1]
+
+        true_values = [(a+1)*b for a, b in zip(true_values, norms)]
+        predictions = [(a+1)*b for a, b in zip(predictions, norms)]
+
+        return predictions, true_values
 
     def get_predictions_true_data(self):
         true_values = []
@@ -44,14 +63,5 @@ class lagModel(baseModel):
             true_values += list(y)
 
         predictions += [true_values[0]] + true_values[:-1]
-
-        # steps_test = int(self.model_data.ntest / self.model_data.batch_size)
-        # print('> Тестируем модель на', self.model_data.ntest, 'строках с', steps_test, 'шагами')
-        # temp = list(generator_strip_xy(data_gen_test,true_values))
-        # predictions = [true_values[0]] + true_values[:-1]
-        # predictions = self.model.predict_generator(
-        #     generator_strip_xy(data_gen_test, true_values),
-        #     steps=steps_test
-        # )
 
         return predictions, true_values

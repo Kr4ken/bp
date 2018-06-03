@@ -114,7 +114,7 @@ class bitdata(object):
     def __get_clean_filename(self, x_window, y_window):
         return self.filter_filename + "_x="+str(x_window) +"_y="+str(y_window)
 
-    def get_generator_clean_data_with_norm():
+    def get_generator_clean_data_with_norm(self):
         clean_file = self.clean_filename + "." + self.filename_extension
         with h5py.File(clean_file, 'r') as hf:
             i = 0
@@ -222,8 +222,6 @@ class bitdata(object):
 
         i = 0
 
-        # Создаем файл для записи норм
-        hfn = h5py.File(filename_out_norm,'w')
         # Открываем файл на запись
         with h5py.File(filename_out, 'w') as hf:
             x1, y1,norm_1 = next(data_gen)
@@ -240,7 +238,7 @@ class bitdata(object):
             dset_y[:] = y1
 
             rcount_norm = norm_1.shape[0]
-            dset_norm = hf.create_dataset('n', shape=norm_1.shape, chunks=True)
+            dset_norm = hf.create_dataset('n', shape=norm_1.shape,maxshape = (None,norm_1.shape[1]), chunks=True)
             dset_norm[:]=norm_1
             print('> Создаем x & y файлы с данными | Группа:', i, end='\n')
             for x_batch, y_batch, norm_batch in data_gen:
@@ -311,9 +309,11 @@ class bitdata(object):
                 # Конвертируем из списка в массив с 3 измерениям [windows, window_val, val_dimension]
                 x_np_arr = np.array(x_data)
                 y_np_arr = np.array(y_data)
+                n_np_arr = np.array(norm_data)
                 x_data = []
                 y_data = []
-                yield (x_np_arr, y_np_arr,norm_data)
+                norm_data=[]
+                yield (x_np_arr, y_np_arr,n_np_arr)
 
     def __zero_base_standardise(self, data, abs_base=pd.DataFrame()):
         """Standardise dataframe to be zero based percentage returns from i=0"""
