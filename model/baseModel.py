@@ -179,20 +179,23 @@ class baseModel(object):
                 multi_prediction = []
                 x_curr = x[i]
                 y_curr = y[i]
+                n_curr = n[i]
                 for step in range(steps):
                     prediction = self.model.predict(x_curr.reshape(1,self.x_window,1))
-                    # x_curr = x_curr[1:] + [prediction]
                     x_curr = x_curr[1:]
-                    # x_curr.put(self.x_window-2,prediction)
                     x_curr = np.append(x_curr,prediction)
                     y_curr = y[i+step]
-                    true_value.append(y_curr)
-                    multi_prediction.append(prediction)
+                    # true_value.append(y_curr)
+                    true_value.append([(a+1)*b for a,b in zip(y_curr,n_curr)])
+                    # multi_prediction.append(prediction)
+                    multi_prediction.append([(a+1)*b for a,b in zip(prediction,n_curr)])
                 true_values.append(true_value)
+                # true_values.append([(a+1)*b for a,b in zip(true_value,n_curr)])
                 multi_predictions.append(multi_prediction)
+                # multi_predictions.append([(a+1)*b for a,b in zip(multi_prediction,n_curr)])
 
-        multi_predictions = [(a+1)*b for a,b in zip(multi_predictions,norms)]
-        true_values = [(a+1)*b for a,b in zip(true_values,norms)]
+        # multi_predictions = [(a+1)*b for a,b in zip(multi_predictions,norms)]
+        # true_values = [(a+1)*b for a,b in zip(true_values,norms)]
         return multi_predictions, true_values
 
     def get_predictions_true_data_with_norm(self):

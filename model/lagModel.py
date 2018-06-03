@@ -65,3 +65,54 @@ class lagModel(baseModel):
         predictions += [true_values[0]] + true_values[:-1]
 
         return predictions, true_values
+
+    def get_multistep_predictions_true_data_with_norm(self,steps=1):
+        true_values = []
+        multi_predictions=[]
+        data_gen_test = self.model_data.get_generator_clean_data_test_with_norm()
+
+        steps_test = int(self.model_data.ntest / self.model_data.batch_size)
+        print('> Тестируем модель на ', self.model_data.ntest, ' строках с ', steps_test, ' шагами')
+        for x,y,n in data_gen_test:
+            if len(x) == 0:
+                break
+            for i in range(len(x)-steps):
+                true_value=[]
+                multi_prediction = []
+                n_curr = n[i]
+                for step in range(steps):
+                    prediction = y[i]
+                    y_curr = y[i+step]
+                    # true_value.append(y_curr)
+                    true_value.append([(a+1)*b for a, b in zip(y_curr,n_curr)])
+                    # multi_prediction.append(prediction)
+                    multi_prediction.append([(a+1)*b for a, b in zip(prediction,n_curr)])
+                true_values.append(true_value)
+                # true_values.append([(a+1)*b for a,b in zip(true_value,n_curr)])
+                multi_predictions.append(multi_prediction)
+                # multi_predictions.append([(a+1)*b for a,b in zip(multi_prediction,n_curr)])
+
+        return multi_predictions, true_values
+
+    def get_multistep_predictions_true_data(self,steps=1):
+        true_values = []
+        multi_predictions=[]
+        data_gen_test = self.model_data.get_generator_clean_data_test()
+
+        steps_test = int(self.model_data.ntest / self.model_data.batch_size)
+        print('> Тестируем модель на ', self.model_data.ntest, ' строках с ', steps_test, ' шагами')
+        for x,y in data_gen_test:
+            if len(x) == 0:
+                break
+            for i in range(len(x)-steps):
+                true_value=[]
+                multi_prediction = []
+                for step in range(steps):
+                    prediction = y[i]
+                    y_curr = y[i+step]
+                    true_value.append(y_curr)
+                    multi_prediction.append(prediction)
+                true_values.append(true_value)
+                multi_predictions.append(multi_prediction)
+
+        return multi_predictions, true_values
