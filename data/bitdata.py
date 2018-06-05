@@ -221,6 +221,10 @@ class bitdata(object):
         end = dateutil.parser.parse(end_date)
         # result_data = data.loc[data.index.isin(range(int(begin.timestamp()), int(end.timestamp())))]
         result_data = data.loc[begin.timestamp():end.timestamp()]
+        if self.type == period.MINUTES:
+            result_data.to_csv(filename_out)
+            print('> Отфильтрованные данные сохранены в `' + filename_out + '`')
+            return
         date = self.__date_generator(begin,end,self.type)
         res = pd.DataFrame(columns=data.columns)
         res.index.name = 'Timestamp'
